@@ -11,7 +11,8 @@ pthread_cond_t buffer_not_full = PTHREAD_COND_INITIALIZER;
 pthread_cond_t buffer_not_empty = PTHREAD_COND_INITIALIZER;
 
 int buffer[MAX_BUFFER_SIZE];
-int buffer_index = 0;
+int buffer_head = 0;
+int buffer_tail = 0;
 
 int total_producers, total_consumers, items_per_producer, buffer_size, delay;
 
@@ -25,11 +26,12 @@ void* producer(void* arg) {
         pthread_mutex_lock(&buffer_mutex);
 
         // Wait if buffer is full
-        while (buffer_index == buffer_size) {
+        while ((buffer_tail + 1) % buffer_size == buffer_head) {
             pthread_cond_wait(&buffer_not_full, &buffer_mutex);
         }
 
-        buffer[buffer_index++] = item;
+        buffer[buffer_tail] = item;
+        buffer_tail = (buffer_tail + 1) % buffer_size;
 
         // Print produced item
         printf("producer_%d produced item %d\n", producer_id, item);
@@ -53,12 +55,13 @@ void* consumer(void* arg) {
         pthread_mutex_lock(&buffer_mutex);
 
         // Wait if buffer is empty
-        while (buffer_index == 0) {
+        while (buffer_head == buffer_tail) {
             pthread_cond_wait(&buffer_not_empty, &buffer_mutex);
         }
 
         // Consume item
-        int item = buffer[--buffer_index];
+        int item = buffer[buffer_head];
+        buffer_head = (buffer_head + 1) % buffer_size;
 
         // Print consumed item
         printf("consumer_%d consumed item %d\n", consumer_id, item);
@@ -74,7 +77,6 @@ void* consumer(void* arg) {
 
     return NULL;
 }
-
 int main(int argc, char* argv[]) {
     if (argc != 6) {
         fprintf(stderr, "Usage: %s p c i b d\n", argv[0]);
