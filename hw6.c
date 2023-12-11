@@ -86,7 +86,7 @@ void* consumer(void* arg) {
 
 int main(int argc, char* argv[]) {
     if (argc != 6) {
-        fprintf(stderr, "WRONG COMMAND LINE ARGS\n", argv[0]);
+        fprintf(stderr,"error: wrong command line args.\n");
         exit(1);
     }
 
