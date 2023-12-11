@@ -85,6 +85,11 @@ void* consumer(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
+    if (argc != 6) {
+        fprintf(stderr, "WRONG COMMAND LINE ARGS\n", argv[0]);
+        exit(1);
+    }
+
     total_producers = atoi(argv[1]);
     total_consumers = atoi(argv[2]);
     items_per_producer = atoi(argv[3]);
