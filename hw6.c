@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-const int MAX_BUFFER_SIZE = 10;
-const int MAX_THREADS = 16;
+#define MAX_BUFFER_SIZE 10
+#define MAX_THREADS 16
 
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buffer_not_full = PTHREAD_COND_INITIALIZER;
@@ -24,7 +24,6 @@ int buffer_tail = 0;
 
 void* producer(void* arg) {
     int producer_id = *(int*)arg;
-
     for (int i = 0; i < items_per_producer; ++i) {
         //produce item
         int item = producer_id * items_per_producer + i;
@@ -41,13 +40,12 @@ void* producer(void* arg) {
         //add the tail to move onto the next slot to produced
         buffer_tail = (buffer_tail + 1) % buffer_size;
 
-        //print produced item
         printf("producer_%d produced item %d\n", producer_id, item);
 
         pthread_cond_signal(&buffer_not_empty);
         pthread_mutex_unlock(&buffer_mutex);
 
-        //introduce delay if needed
+        //delay based on user input
         if (delay == 1) {
             usleep(500000); //delay of 500,000 microseconds
         }
@@ -58,7 +56,6 @@ void* producer(void* arg) {
 
 void* consumer(void* arg) {
     int consumer_id = *(int*)arg;
-
     for (int i = 0; i < items_per_producer * total_producers / total_consumers; ++i) {
         pthread_mutex_lock(&buffer_mutex);
 
@@ -73,7 +70,6 @@ void* consumer(void* arg) {
         //add the head to move onto the next slot to be consumed
         buffer_head = (buffer_head + 1) % buffer_size;
 
-        //print consumed item
         printf("consumer_%d consumed item %d\n", consumer_id, item);
 
         pthread_cond_signal(&buffer_not_full);
@@ -87,6 +83,7 @@ void* consumer(void* arg) {
     //generally we return the item but in this case we are not using it for anything
     return NULL;
 }
+
 int main(int argc, char* argv[]) {
     total_producers = atoi(argv[1]);
     total_consumers = atoi(argv[2]);
@@ -95,7 +92,7 @@ int main(int argc, char* argv[]) {
     delay = atoi(argv[5]);
 
     if (total_consumers >= total_producers * items_per_producer) {
-        fprintf(stderr, "Error: Number of consumers should be smaller than the total items being produced.\n");
+        fprintf(stderr, "error: number of consumers should be smaller than the total items being produced.\n");
         exit(1);
     }
 
@@ -105,23 +102,20 @@ int main(int argc, char* argv[]) {
     int producer_ids[MAX_THREADS];
     int consumer_ids[MAX_THREADS]; 
 
-    //create producer threads
+    //make producers
     for (int i = 0; i < total_producers; ++i) {
         producer_ids[i] = i;
         pthread_create(&producers[i], NULL, producer, &producer_ids[i]);
     }
-
-    //create consumer threads
+    //make consumers
     for (int i = 0; i < total_consumers; ++i) {
         consumer_ids[i] = i;
         pthread_create(&consumers[i], NULL, consumer, &consumer_ids[i]);
     }
-
-    //wait for all producer threads to finish (threads are non-detached so join is used)
+    //wait for all producer threads to finish
     for (int i = 0; i < total_producers; ++i) {
         pthread_join(producers[i], NULL);
     }
-
     //wait for all consumer threads to finish
     for (int i = 0; i < total_consumers; ++i) {
         pthread_join(consumers[i], NULL);
