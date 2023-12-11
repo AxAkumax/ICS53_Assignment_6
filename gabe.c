@@ -27,6 +27,7 @@ void* producer(void* arg) {
 
         // Wait if buffer is full
         while ((buffer_tail + 1) % buffer_size == buffer_head) {
+            //mutex is unlocked since we need a consumer to consume the item since the buffer is full
             pthread_cond_wait(&buffer_not_full, &buffer_mutex);
         }
 
@@ -41,7 +42,7 @@ void* producer(void* arg) {
 
         // Introduce delay if needed
         if (delay == 1) {
-            usleep(500000);
+            usleep(500000); //delay of 500,000 microseconds
         }
     }
 
@@ -56,6 +57,7 @@ void* consumer(void* arg) {
 
         // Wait if buffer is empty
         while (buffer_head == buffer_tail) {
+            //mutex is unlocked since we need a producer thread to produce an item in order to consume
             pthread_cond_wait(&buffer_not_empty, &buffer_mutex);
         }
 
@@ -69,9 +71,9 @@ void* consumer(void* arg) {
         pthread_cond_signal(&buffer_not_full);
         pthread_mutex_unlock(&buffer_mutex);
 
-        // Introduce delay if needed
+        //delay based on user input
         if (delay == 0) {
-            usleep(500000);
+            usleep(500000); //delay of 500,000 microseconds
         }
     }
 
@@ -91,11 +93,12 @@ int main(int argc, char* argv[]) {
 
     if (total_consumers >= total_producers * items_per_producer) {
         fprintf(stderr, "Error: Number of consumers should be smaller than the total items being produced.\n");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
+    //although initialized to MAX_THREADS we will only utilize the arguments for each of the data structures
     pthread_t producers[MAX_THREADS], consumers[MAX_THREADS];
-    int producer_ids[MAX_THREADS], consumer_ids[MAX_THREADS];
+    int producer_ids[MAX_THREADS], consumer_ids[MAX_THREADS]; 
 
     // Create producer threads
     for (int i = 0; i < total_producers; ++i) {
