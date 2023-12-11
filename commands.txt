@@ -1,3 +1,3 @@
-gcc gabe.c -o gabe | ./gabe 2 4 10 8 0
+gcc hw6.c -o hw6 | ./hw6 2 4 10 8 0
 
-gcc gabe.c -o gabe | ./gabe 2 4 10 8 1
+gcc hw6.c -o hw6 | ./hw6 2 4 10 8 1
